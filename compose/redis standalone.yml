@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  redis:
+    image: sloopstash/redis:v7.2.1
+    container_name: redis-standlone
+    entrypoint: /usr/bin/supervisord
+    command: "-c /etc/supervisord.conf"
+    volumes:
+      - redis-data:/opt/redis/data
+      - redis-log:/opt/redis/log
+      - ${HOME_DIR}/workload/supervisor/conf/server.conf:/etc/supervisord.conf
+      - ${HOME_DIR}/workload/redis/${REDIS_VERSION}/conf/supervisor.ini:/opt/redis/system/supervisor.ini
+      - ${HOME_DIR}/workload/redis/${REDIS_VERSION}/conf/server.conf:/opt/redis/conf/server.conf
+    
+    networks:
+      common:
+        ipv4_address: ${REDIS_IP}
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    restart: always
+    ports:
+      - "${REDIS_PORT}:5540"
+    volumes:
+      - redis-insight:/opt/redis/db
+    networks:
+      common:
+
+volumes:
+  redis-data:
+    driver: local
+  redis-log:
+    driver: local
+  redis-insight:
+    driver: local
+
+networks:
+  common:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${REDIS_NETWORK}
